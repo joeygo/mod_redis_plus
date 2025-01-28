@@ -1,19 +1,40 @@
 #include "mod_redis_plus.h"
 
-std::vector<std::string> get_commands(char *data) {
+std::vector<std::string> get_commands(char* data) {
     std::vector<std::string> commands;
-    bool flag = data != NULL && strlen(data) > 0;
-    while(flag) {
-        char *command = NULL;
-        if ((command = strchr(data, '| '))) {
-            *command = '\0';
-            command++;
+    
+    if (!data || !*data) return commands;  // Return early if data is null or empty
+
+    while (*data) {
+        // Skip spaces
+        while (*data == ' ') data++;
+
+        if (*data == '\0') break;  // End of data
+
+        std::string command;
+        
+        // Handle quoted string
+        if (*data == '"' || *data == '\'') {
+            char quote = *data++;
+            char* start = data;
+            
+            // Find closing quote
+            while (*data && *data != quote) data++;
+            if (*data != quote) break;  // Invalid string without closing quote
+
+            command.assign(start, data);  // Extract the quoted string
+            data++;  // Skip closing quote
         } else {
-            flag = false;
+            char* start = data;
+            
+            // Extract until space or end of string
+            while (*data && *data != ' ') data++;
+            command.assign(start, data);
         }
-        commands.push_back(std::string(data));
-        data = command;
+
+        commands.push_back(command);
     }
+
     return commands;
 }
 
